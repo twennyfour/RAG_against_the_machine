@@ -1,0 +1,9 @@
+moulinette*
+data/
+*.pdf
+__pycache__/
+.mypy_cache/
+.pytest_cache/
+.venv/
+.cache/
+SUBJECT_README.md
