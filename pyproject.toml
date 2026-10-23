@@ -1,0 +1,20 @@
+[project]
+name = "rag_against_the_machine"
+version = "0.1.0"
+description = "mleitao's rag_against_the_machine project"
+requires-python = ">=3.10"
+dependencies = [
+  "pydantic",
+  "fire",
+  "tqdm",
+  "numpy",
+  "scipy",
+  "transformers",
+  "torch",
+]
+
+[dependency-groups]
+dev = ["flake8", "mypy"]
+
+[tool.uv]
+package = false
