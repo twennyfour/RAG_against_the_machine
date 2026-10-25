@@ -44,6 +44,12 @@ class StudentSearchResultsAndAnswer(BaseModel):
     k: int
 
 
+class SourceFile(BaseModel):
+    file_path: str
+    text: str
+    kind: Literal["python", "text"]
+
+
 class Chunk(MinimalSource):
     text: str
     kind: Literal["python", "text"]
