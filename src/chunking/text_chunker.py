@@ -1,21 +1,10 @@
 import re
-from dataclasses import dataclass
 
-from ..io_utils import RagError
 from ..models import Chunk, SourceFile
-from .common import split_by_lines
+from .common import Block, pack_blocks
 
 HEADING_RE = re.compile(r"^(#{1,6})\s+(.+)$")
 FENCE_RE = re.compile(r"^\s*(```|~~~)")
-MIN_CHUNK_SIZE = 200
-
-
-@dataclass
-class Block:
-    start: int
-    end: int
-    starts_section: bool
-    context: str
 
 
 def split_blocks(text: str) -> list[Block]:
@@ -45,43 +34,4 @@ def split_blocks(text: str) -> list[Block]:
 
 
 def chunk_text(source: SourceFile, max_chunk_size: int) -> list[Chunk]:
-    if max_chunk_size <= 0:
-        raise RagError("max_chunk_size must be a positive integer")
-    text = source.text
-    spans: list[Block] = []
-    for block in split_blocks(text):
-        pieces = split_by_lines(text, block.start, block.end, max_chunk_size)
-        for index, (start, end) in enumerate(pieces):
-            starts_section = block.starts_section and index == 0
-            current = spans[-1] if spans else None
-            fits = (
-                current is not None
-                and end - current.start <= max_chunk_size
-            )
-            current_is_tiny_section = (
-                current is not None
-                and current.starts_section
-                and current.end - current.start < MIN_CHUNK_SIZE
-            )
-            if current and fits and (
-                not starts_section or current_is_tiny_section
-            ):
-                current.end = end
-            else:
-                spans.append(Block(start, end, starts_section, block.context))
-
-    chunks: list[Chunk] = []
-    for span in spans:
-        content = text[span.start:span.end]
-        if not content.strip():
-            continue
-        assert 0 < span.end - span.start <= max_chunk_size
-        chunks.append(Chunk(
-            file_path=source.file_path,
-            first_character_index=span.start,
-            last_character_index=span.end,
-            text=content,
-            kind=source.kind,
-            context=span.context,
-        ))
-    return chunks
+    return pack_blocks(source, split_blocks(source.text), max_chunk_size)
