@@ -1,5 +1,6 @@
 import ast
 import re
+import warnings
 
 from ..models import Chunk, SourceFile
 from .common import Block, pack_blocks
@@ -49,5 +50,10 @@ def split_python_blocks(text: str, max_chunk_size: int) -> list[Block]:
 
 
 def chunk_python(source: SourceFile, max_chunk_size: int) -> list[Chunk]:
-    blocks = split_python_blocks(source.text, max_chunk_size)
+    try:
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", SyntaxWarning)
+            blocks = split_python_blocks(source.text, max_chunk_size)
+    except (SyntaxError, ValueError):
+        blocks = [Block(0, len(source.text), False, "")]
     return pack_blocks(source, blocks, max_chunk_size)
