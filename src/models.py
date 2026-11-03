@@ -53,4 +53,3 @@ class SourceFile(BaseModel):
 class Chunk(MinimalSource):
     text: str
     kind: Literal["python", "text"]
-    context: str = ""
