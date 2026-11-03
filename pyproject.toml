@@ -13,6 +13,7 @@ dependencies = [
     "torch",
     "bm25s",
     "langchain-text-splitters",
+    "pystemmer",
 ]
 
 [dependency-groups]

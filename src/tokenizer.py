@@ -1,15 +1,17 @@
 import re
 
+import Stemmer
+from bm25s.stopwords import STOPWORDS_EN
+
 WORD_RE = re.compile(r"[A-Za-z0-9_]+")
 CAMEL_BOUNDARY_RE = re.compile(
     r"(?<=[a-z]{2})(?=[A-Z])|(?<=[A-Za-z0-9])(?=[A-Z][a-z]{2,})"
 )
-STOPWORDS = frozenset({
-    "a", "an", "and", "are", "as", "at", "be", "by", "can", "do", "does",
-    "for", "from", "how", "in", "is", "it", "of", "on", "or", "that",
-    "the", "this", "to", "was", "what", "when", "where", "which", "who",
-    "why", "with",
-})
+QUESTION_WORDS = {
+    "can", "do", "does", "how", "what", "when", "where", "which", "who", "why",
+}
+STOPWORDS = frozenset(STOPWORDS_EN) | QUESTION_WORDS
+STEMMER = Stemmer.Stemmer("english")
 
 
 def split_identifier(word: str) -> list[str]:
@@ -28,4 +30,4 @@ def tokenize(text: str) -> list[str]:
             token = candidate.lower()
             if len(token) > 1 and token not in STOPWORDS:
                 tokens.append(token)
-    return tokens
+    return list(STEMMER.stemWords(tokens))
