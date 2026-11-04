@@ -53,3 +53,8 @@ class SourceFile(BaseModel):
 class Chunk(MinimalSource):
     text: str
     kind: Literal["python", "text"]
+
+
+class ChunkIndex(BaseModel):
+    max_chunk_size: int
+    chunks: list[Chunk]

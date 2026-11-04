@@ -1,11 +1,11 @@
-UV 							?= uv
+UV				?= uv
 UV_PROJECT_ENV	:= .venv
-CACHE_DIR				:= .cache
-UV_CACHE_DIR		:= $(CACHE_DIR)/uv
-HF_CACHE_DIR		:= $(CACHE_DIR)/huggingface
-UV_ENV					:= UV_CACHE_DIR=$(UV_CACHE_DIR) UV_PROJECT_ENVIRONMENT=$(UV_PROJECT_ENV) HF_HOME=$(HF_CACHE_DIR)
+CACHE_DIR		:= .cache
+UV_CACHE_DIR	:= $(CACHE_DIR)/uv
+HF_CACHE_DIR	:= $(CACHE_DIR)/huggingface
+UV_ENV			:= UV_CACHE_DIR=$(UV_CACHE_DIR) UV_PROJECT_ENVIRONMENT=$(UV_PROJECT_ENV) HF_HOME=$(HF_CACHE_DIR)
 
-ARGS						?=
+ARGS			?=
 
 .PHONY: install run debug lint clean fclean
 
@@ -28,6 +28,7 @@ lint: install clean
 clean:
 	find . -type d -name "__pycache__" -exec rm -rf {} +
 	find . -type d -name ".mypy_cache" -exec rm -rf {} +
+	rm -rf data/processed/
 
 fclean: clean
 	rm -rf $(UV_PROJECT_ENV)
