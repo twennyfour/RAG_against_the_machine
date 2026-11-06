@@ -64,7 +64,7 @@ class Cli:
         )
         output_path = Path(save_directory) / Path(dataset_path).name
         save_model(results, output_path)
-        print(f"Saved search results to {output_path}")
+        print(f"Saved student_search_results to {output_path}")
 
     def answer(self) -> None:
         raise NotImplementedError
@@ -72,5 +72,14 @@ class Cli:
     def answer_dataset(self) -> None:
         raise NotImplementedError
 
-    def evaluate(self) -> None:
-        raise NotImplementedError
+    def evaluate(self, student_search_results_path: str,
+                 dataset_path: str) -> None:
+        from .evaluation import recall_at_k
+
+        results = load_model(student_search_results_path,
+                             StudentSearchResults)
+        dataset = load_model(dataset_path, RagDataset)
+        recalls = recall_at_k(results, dataset)
+        print(f"Questions evaluated: {len(dataset.rag_questions)}")
+        for k, recall in recalls.items():
+            print(f"Recall@{k}: {recall:.3f} ({recall:.1%})")
