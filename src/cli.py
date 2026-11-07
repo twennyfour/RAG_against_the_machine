@@ -9,6 +9,8 @@ from .models import (
     StudentSearchResultsAndAnswer,
 )
 
+MAX_SOURCE_LENGTH = 2000
+
 
 def check_positive_int(name: str, value: object) -> int:
     if isinstance(value, bool) or not isinstance(value, int) or value <= 0:
@@ -29,6 +31,11 @@ class Cli:
         from .indexer import build_index
 
         size = check_positive_int("max_chunk_size", max_chunk_size)
+        if size > MAX_SOURCE_LENGTH:
+            raise RagError(
+                f"--max_chunk_size must be at most {MAX_SOURCE_LENGTH}: "
+                "longer sources are rejected by the grader"
+            )
         build_index(raw_dir, output_dir, size)
         print(f"Ingestion complete! Indices saved under {output_dir}/")
 

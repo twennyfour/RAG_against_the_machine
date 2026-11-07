@@ -47,20 +47,23 @@ class Retriever:
 
     def search_many(self, queries: list[str], k: int,
                     show_progress: bool = True) -> list[list[MinimalSource]]:
+        if not queries:
+            return []
         token_lists = tokenize(queries)
         query_vectors = self.embedder.encode(queries)
+        candidates = max(CANDIDATES, k)
         results: list[list[MinimalSource]] = []
         for query, tokens, query_vector in tqdm(
             zip(queries, token_lists, query_vectors),
             total=len(queries), desc="Searching", disable=not show_progress,
         ):
-            if not query.strip():
+            bm25_ranking = [i for i, _ in self.bm25.top_k(tokens, candidates)]
+            if not query.strip() or not bm25_ranking:
                 results.append([])
                 continue
-            bm25_ranking = [i for i, _ in self.bm25.top_k(tokens, CANDIDATES)]
             dense_ranking = [
                 i for i, _ in dense_top_k(self.vectors, query_vector,
-                                          CANDIDATES)
+                                          candidates)
             ]
             fused = reciprocal_rank_fusion([bm25_ranking, dense_ranking],
                                            [1.0, DENSE_WEIGHT])

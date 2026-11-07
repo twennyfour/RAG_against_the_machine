@@ -23,20 +23,32 @@ SYSTEM_PROMPT = (
 )
 
 
+def load_qwen(model_name: str, dtype: torch.dtype,
+              local_files_only: bool) -> tuple[Any, Any]:
+    tokenizer = AutoTokenizer.from_pretrained(
+        model_name, local_files_only=local_files_only
+    )
+    model = AutoModelForCausalLM.from_pretrained(
+        model_name, dtype=dtype, local_files_only=local_files_only
+    )
+    return tokenizer, model
+
+
 class Generator:
     def __init__(self, model_name: str = MODEL_NAME) -> None:
         device = "cuda" if torch.cuda.is_available() else "cpu"
         dtype = torch.bfloat16 if device == "cuda" else torch.float32
         try:
-            self.tokenizer = AutoTokenizer.from_pretrained(model_name)
-            model: Any = AutoModelForCausalLM.from_pretrained(
-                model_name, dtype=dtype
-            )
-            self.model = model.to(device)
+            try:
+                tokenizer, model = load_qwen(model_name, dtype, True)
+            except OSError:
+                tokenizer, model = load_qwen(model_name, dtype, False)
         except (OSError, ValueError) as error:
             raise RagError(
                 f"Cannot load language model {model_name}: {error}"
             ) from None
+        self.tokenizer = tokenizer
+        self.model = model.to(device)
         self.model.eval()
 
     def build_context(self, sources: list[MinimalSource]) -> str:

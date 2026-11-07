@@ -14,7 +14,12 @@ class Embedder:
     def __init__(self, model_name: str = MODEL_NAME) -> None:
         device = "cuda" if torch.cuda.is_available() else "cpu"
         try:
-            self.model = SentenceTransformer(model_name, device=device)
+            try:
+                self.model = SentenceTransformer(
+                    model_name, device=device, local_files_only=True
+                )
+            except OSError:
+                self.model = SentenceTransformer(model_name, device=device)
         except (OSError, ValueError) as error:
             raise RagError(
                 f"Cannot load embedding model {model_name}: {error}"
