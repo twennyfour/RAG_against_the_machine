@@ -1,3 +1,5 @@
+"""Tokenization shared by indexing and search."""
+
 import bm25s
 import Stemmer
 from bm25s.stopwords import STOPWORDS_EN
@@ -10,6 +12,14 @@ STEMMER = Stemmer.Stemmer("english")
 
 
 def tokenize(texts: list[str]) -> list[list[str]]:
+    """Lowercase, drop stopwords and stem each text.
+
+    Args:
+        texts: Texts to tokenize.
+
+    Returns:
+        One token list per text.
+    """
     tokens = bm25s.tokenize(
         texts,
         stopwords=STOPWORDS,

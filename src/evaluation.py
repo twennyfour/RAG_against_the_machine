@@ -1,3 +1,5 @@
+"""Recall@k evaluation with the subject's IoU rule."""
+
 from .io_utils import RagError
 from .models import (
     AnsweredQuestion,
@@ -11,6 +13,15 @@ IOU_THRESHOLD = 0.05
 
 
 def iou(first: MinimalSource, second: MinimalSource) -> float:
+    """Return the IoU of two sources, 0.0 if in different files.
+
+    Args:
+        first: First span.
+        second: Second span.
+
+    Returns:
+        Overlap length divided by union length.
+    """
     if first.file_path != second.file_path:
         return 0.0
     overlap = (
@@ -28,6 +39,15 @@ def iou(first: MinimalSource, second: MinimalSource) -> float:
 
 def question_recall(truth: list[MinimalSource],
                     retrieved: list[MinimalSource]) -> float:
+    """Return the share of truth sources found.
+
+    Args:
+        truth: Ground-truth sources.
+        retrieved: Retrieved sources.
+
+    Returns:
+        Recall between 0.0 and 1.0.
+    """
     found = sum(
         any(iou(source, result) >= IOU_THRESHOLD for result in retrieved)
         for source in truth
@@ -37,6 +57,18 @@ def question_recall(truth: list[MinimalSource],
 
 def recall_at_k(results: StudentSearchResults,
                 dataset: RagDataset) -> dict[int, float]:
+    """Return the mean recall for each k in RECALL_KS.
+
+    Args:
+        results: Search results to score.
+        dataset: Ground-truth dataset.
+
+    Returns:
+        Mean recall keyed by k.
+
+    Raises:
+        RagError: If no question has sources.
+    """
     truth_by_id = {
         question.question_id: question.sources
         for question in dataset.rag_questions

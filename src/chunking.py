@@ -1,3 +1,5 @@
+"""Split source files into chunks with langchain text splitters."""
+
 from langchain_text_splitters import Language, RecursiveCharacterTextSplitter
 
 from .io_utils import RagError
@@ -10,6 +12,18 @@ SPLITTER_LANGUAGES = {
 
 
 def chunk_file(source: SourceFile, max_chunk_size: int) -> list[Chunk]:
+    """Split a file into chunks of at most max_chunk_size chars.
+
+    Args:
+        source: File to split.
+        max_chunk_size: Maximum chunk length in chars.
+
+    Returns:
+        The chunks, in file order.
+
+    Raises:
+        RagError: If max_chunk_size is not positive.
+    """
     if max_chunk_size <= 0:
         raise RagError("max_chunk_size must be a positive integer")
     splitter = RecursiveCharacterTextSplitter.from_language(

@@ -1,3 +1,5 @@
+"""Command-line interface exposed through Python Fire."""
+
 from pathlib import Path
 
 from .io_utils import RagError, load_model, save_model
@@ -13,12 +15,35 @@ MAX_SOURCE_LENGTH = 2000
 
 
 def check_positive_int(name: str, value: object) -> int:
+    """Return value if it is a positive int.
+
+    Args:
+        name: Option name used in the message.
+        value: Value given on the command line.
+
+    Returns:
+        The value as an int.
+
+    Raises:
+        RagError: If value is not a positive int.
+    """
     if isinstance(value, bool) or not isinstance(value, int) or value <= 0:
         raise RagError(f"--{name} must be a positive integer, got {value!r}")
     return value
 
 
 def check_query(query: object) -> str:
+    """Return the query as stripped, non-empty text.
+
+    Args:
+        query: Query given on the command line.
+
+    Returns:
+        The stripped query.
+
+    Raises:
+        RagError: If the query is empty.
+    """
     text = str(query).strip()
     if not text:
         raise RagError("The query must not be empty")
@@ -26,8 +51,19 @@ def check_query(query: object) -> str:
 
 
 class Cli:
+    """RAG commands: index, search, answer and evaluate."""
     def index(self, max_chunk_size: int = 2000, raw_dir: str = "data/raw",
               output_dir: str = "data/processed") -> None:
+        """Chunk the corpus and build the search index.
+
+        Args:
+            max_chunk_size: Maximum chunk length, at most 2000.
+            raw_dir: Folder with the corpus.
+            output_dir: Folder to write the index to.
+
+        Raises:
+            RagError: If an argument is invalid or indexing fails.
+        """
         from .indexer import build_index
 
         size = check_positive_int("max_chunk_size", max_chunk_size)
@@ -41,6 +77,16 @@ class Cli:
 
     def search(self, query: str, k: int = 10,
                index_dir: str = "data/processed") -> None:
+        """Print the top-k sources for a query.
+
+        Args:
+            query: Question to search for.
+            k: Number of sources to return.
+            index_dir: Folder holding the index.
+
+        Raises:
+            RagError: If an argument is invalid or the index is missing.
+        """
         from .retriever import Retriever
 
         text = check_query(query)
@@ -56,6 +102,17 @@ class Cli:
     def search_dataset(self, dataset_path: str, k: int = 10,
                        save_directory: str = "data/output/search_results",
                        index_dir: str = "data/processed") -> None:
+        """Search every dataset question and save results.
+
+        Args:
+            dataset_path: RagDataset JSON file.
+            k: Number of sources per question.
+            save_directory: Folder for the results.
+            index_dir: Folder holding the index.
+
+        Raises:
+            RagError: If an argument, file or the index is invalid.
+        """
         from .retriever import Retriever
 
         count = check_positive_int("k", k)
@@ -81,6 +138,17 @@ class Cli:
 
     def answer(self, query: str, k: int = 10,
                index_dir: str = "data/processed") -> None:
+        """Answer a query from its retrieved sources.
+
+        Args:
+            query: Question to answer.
+            k: Number of sources to retrieve.
+            index_dir: Folder holding the index.
+
+        Raises:
+            RagError: If an argument is invalid or a model or the index
+                is missing.
+        """
         from .generator import Generator
         from .retriever import Retriever
 
@@ -99,6 +167,15 @@ class Cli:
         self, student_search_results_path: str,
         save_directory: str = "data/output/search_results_and_answer",
     ) -> None:
+        """Generate answers for a search results file.
+
+        Args:
+            student_search_results_path: StudentSearchResults JSON file.
+            save_directory: Folder for the answers.
+
+        Raises:
+            RagError: If the file is invalid or the output cannot be written.
+        """
         from tqdm import tqdm
 
         from .generator import Generator
@@ -124,6 +201,15 @@ class Cli:
 
     def evaluate(self, student_search_results_path: str,
                  dataset_path: str) -> None:
+        """Print recall@k of search results against a dataset.
+
+        Args:
+            student_search_results_path: StudentSearchResults JSON file.
+            dataset_path: Ground-truth RagDataset JSON file.
+
+        Raises:
+            RagError: If a file is missing or invalid.
+        """
         from .evaluation import recall_at_k
 
         results = load_model(student_search_results_path,

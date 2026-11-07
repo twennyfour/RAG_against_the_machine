@@ -1,3 +1,5 @@
+"""JSON loading and saving of pydantic models."""
+
 from pathlib import Path
 from typing import TypeVar
 
@@ -7,10 +9,23 @@ ModelT = TypeVar("ModelT", bound=BaseModel)
 
 
 class RagError(Exception):
+    """Expected error shown to the user without a traceback."""
     pass
 
 
 def load_model(path: str | Path, model_cls: type[ModelT]) -> ModelT:
+    """Load and validate a JSON file as model_cls.
+
+    Args:
+        path: JSON file to read.
+        model_cls: Pydantic model to validate with.
+
+    Returns:
+        The validated model.
+
+    Raises:
+        RagError: If the file is unreadable or invalid.
+    """
     try:
         with open(path, encoding="utf-8") as file:
             content = file.read()
@@ -32,6 +47,15 @@ def load_model(path: str | Path, model_cls: type[ModelT]) -> ModelT:
 
 
 def save_model(model: BaseModel, path: str | Path) -> None:
+    """Save a model as JSON, creating parent directories.
+
+    Args:
+        model: Model to save.
+        path: Destination JSON file.
+
+    Raises:
+        RagError: If the file cannot be written.
+    """
     output_path = Path(path)
     try:
         output_path.parent.mkdir(parents=True, exist_ok=True)

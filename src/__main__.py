@@ -1,3 +1,5 @@
+"""Entry point: run the CLI and print errors cleanly."""
+
 import sys
 
 import fire

@@ -1,3 +1,5 @@
+"""Answer generation with Qwen3."""
+
 from typing import Any
 
 import torch
@@ -25,6 +27,19 @@ SYSTEM_PROMPT = (
 
 def load_qwen(model_name: str, dtype: torch.dtype,
               local_files_only: bool) -> tuple[Any, Any]:
+    """Load the Qwen tokenizer and model.
+
+    Args:
+        model_name: Hugging Face model name.
+        dtype: Weight precision.
+        local_files_only: Use only the local cache.
+
+    Returns:
+        The tokenizer and the model.
+
+    Raises:
+        OSError: If the model files are not found.
+    """
     tokenizer = AutoTokenizer.from_pretrained(
         model_name, local_files_only=local_files_only
     )
@@ -35,7 +50,16 @@ def load_qwen(model_name: str, dtype: torch.dtype,
 
 
 class Generator:
+    """Qwen model that answers from retrieved sources."""
     def __init__(self, model_name: str = MODEL_NAME) -> None:
+        """Load the model, on the GPU when available.
+
+        Args:
+            model_name: Hugging Face model name.
+
+        Raises:
+            RagError: If the model cannot be loaded.
+        """
         device = "cuda" if torch.cuda.is_available() else "cpu"
         dtype = torch.bfloat16 if device == "cuda" else torch.float32
         try:
@@ -52,6 +76,14 @@ class Generator:
         self.model.eval()
 
     def build_context(self, sources: list[MinimalSource]) -> str:
+        """Join source texts within the token budget.
+
+        Args:
+            sources: Sources, best first.
+
+        Returns:
+            Context text, empty if no source text.
+        """
         blocks: list[str] = []
         used_tokens = 0
         for source in sources:
@@ -67,6 +99,15 @@ class Generator:
         return "\n\n".join(blocks)
 
     def answer(self, question: str, sources: list[MinimalSource]) -> str:
+        """Generate an answer grounded in the sources.
+
+        Args:
+            question: Question to answer.
+            sources: Retrieved sources, best first.
+
+        Returns:
+            The generated answer.
+        """
         context = self.build_context(sources)
         if not context:
             return NO_CONTEXT_ANSWER

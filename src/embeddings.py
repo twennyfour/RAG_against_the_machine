@@ -1,3 +1,5 @@
+"""Sentence embeddings for semantic search."""
+
 from pathlib import Path
 
 import numpy as np
@@ -11,7 +13,16 @@ EMBEDDINGS_FILE = "embeddings.npy"
 
 
 class Embedder:
+    """Sentence-transformers model that turns text into vectors."""
     def __init__(self, model_name: str = MODEL_NAME) -> None:
+        """Load the model, from the local cache if possible.
+
+        Args:
+            model_name: Hugging Face model name.
+
+        Raises:
+            RagError: If the model cannot be loaded.
+        """
         device = "cuda" if torch.cuda.is_available() else "cpu"
         try:
             try:
@@ -27,6 +38,15 @@ class Embedder:
 
     def encode(self, texts: list[str],
                show_progress: bool = False) -> np.ndarray:
+        """Encode texts into normalized float32 vectors.
+
+        Args:
+            texts: Texts to encode.
+            show_progress: Show a progress bar.
+
+        Returns:
+            Array of shape (len(texts), dimension).
+        """
         vectors = self.model.encode(
             texts,
             batch_size=128,
@@ -38,6 +58,15 @@ class Embedder:
 
 
 def save_embeddings(vectors: np.ndarray, directory: str | Path) -> None:
+    """Save chunk vectors to a directory.
+
+    Args:
+        vectors: Chunk vectors, one row per chunk.
+        directory: Folder to write to.
+
+    Raises:
+        RagError: If the file cannot be written.
+    """
     folder = Path(directory)
     try:
         folder.mkdir(parents=True, exist_ok=True)
@@ -49,6 +78,17 @@ def save_embeddings(vectors: np.ndarray, directory: str | Path) -> None:
 
 
 def load_embeddings(directory: str | Path) -> np.ndarray:
+    """Load chunk vectors saved with save_embeddings().
+
+    Args:
+        directory: Folder holding the vectors.
+
+    Returns:
+        The chunk vectors.
+
+    Raises:
+        RagError: If the file is missing or damaged.
+    """
     path = Path(directory) / EMBEDDINGS_FILE
     if not path.is_file():
         raise RagError(
@@ -65,6 +105,16 @@ def load_embeddings(directory: str | Path) -> np.ndarray:
 
 def dense_top_k(vectors: np.ndarray, query_vector: np.ndarray,
                 k: int) -> list[tuple[int, float]]:
+    """Return the k (row, cosine score) pairs closest to query.
+
+    Args:
+        vectors: Normalized chunk vectors.
+        query_vector: Normalized query vector.
+        k: Maximum number of results.
+
+    Returns:
+        Pairs sorted by descending score.
+    """
     if k <= 0 or len(vectors) == 0:
         return []
     scores = vectors @ query_vector
