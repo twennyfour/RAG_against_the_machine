@@ -1,7 +1,13 @@
 from pathlib import Path
 
 from .io_utils import RagError, load_model, save_model
-from .models import MinimalSearchResults, RagDataset, StudentSearchResults
+from .models import (
+    MinimalAnswer,
+    MinimalSearchResults,
+    RagDataset,
+    StudentSearchResults,
+    StudentSearchResultsAndAnswer,
+)
 
 
 def check_positive_int(name: str, value: object) -> int:
@@ -66,11 +72,48 @@ class Cli:
         save_model(results, output_path)
         print(f"Saved student_search_results to {output_path}")
 
-    def answer(self) -> None:
-        raise NotImplementedError
+    def answer(self, query: str, k: int = 10,
+               index_dir: str = "data/processed") -> None:
+        from .generator import Generator
+        from .retriever import Retriever
 
-    def answer_dataset(self) -> None:
-        raise NotImplementedError
+        text = check_query(query)
+        count = check_positive_int("k", k)
+        sources = Retriever(index_dir).search(text, count)
+        print(Generator().answer(text, sources))
+        if sources:
+            print("\nSources:")
+        for source in sources:
+            print(f"  {source.file_path} "
+                  f"[{source.first_character_index}:"
+                  f"{source.last_character_index}]")
+
+    def answer_dataset(
+        self, student_search_results_path: str,
+        save_directory: str = "data/output/search_results_and_answer",
+    ) -> None:
+        from tqdm import tqdm
+
+        from .generator import Generator
+
+        results = load_model(student_search_results_path,
+                             StudentSearchResults)
+        total = len(results.search_results)
+        print(f"Loaded {total} questions")
+        generator = Generator()
+        answers: list[MinimalAnswer] = []
+        for result in tqdm(results.search_results, desc="Answering"):
+            answer = generator.answer(result.question,
+                                      result.retrieved_sources)
+            answers.append(MinimalAnswer(**result.model_dump(),
+                                         answer=answer))
+        print(f"Processed {len(answers)} of {total} questions")
+        output = StudentSearchResultsAndAnswer(search_results=answers,
+                                               k=results.k)
+        output_path = (Path(save_directory)
+                       / Path(student_search_results_path).name)
+        save_model(output, output_path)
+        print(f"Saved student_search_results_and_answer to {output_path}")
 
     def evaluate(self, student_search_results_path: str,
                  dataset_path: str) -> None:
