@@ -28,9 +28,9 @@ lint: install clean
 clean:
 	find . -type d -name "__pycache__" -exec rm -rf {} +
 	find . -type d -name ".mypy_cache" -exec rm -rf {} +
-	rm -rf data/processed/
-	rm -rf data/output/
 
 fclean: clean
 	rm -rf $(UV_PROJECT_ENV)
 	rm -rf $(CACHE_DIR)
+	rm -rf data/processed/
+	rm -rf data/output/
