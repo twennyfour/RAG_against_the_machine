@@ -14,7 +14,6 @@ dependencies = [
     "bm25s",
     "langchain-text-splitters",
     "pystemmer",
-    "sentence-transformers",
 ]
 
 [dependency-groups]

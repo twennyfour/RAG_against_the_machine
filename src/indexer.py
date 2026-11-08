@@ -7,7 +7,6 @@ from tqdm import tqdm
 from .bm25 import BM25
 from .chunking import chunk_file
 from .corpus import find_files, read_source_file
-from .embeddings import Embedder, save_embeddings
 from .io_utils import RagError, save_model
 from .models import Chunk, ChunkIndex
 from .tokenizer import tokenize
@@ -54,11 +53,6 @@ def build_index(raw_dir: str | Path, output_dir: str | Path,
     texts = [indexed_text(chunk) for chunk in chunks]
     print(f"Building BM25 index over {len(chunks)} chunks...")
     BM25.build(tokenize(texts)).save(output_dir)
-
-    print("Computing embeddings...")
-    vectors = Embedder().encode(texts, show_progress=True)
-    save_embeddings(vectors, output_dir)
-
     save_model(ChunkIndex(max_chunk_size=max_chunk_size, chunks=chunks),
                Path(output_dir) / CHUNKS_FILE)
     return len(chunks)
