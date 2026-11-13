@@ -5,9 +5,8 @@ from typing import Any
 import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
-from .corpus import read_span
-from .io_utils import RagError
-from .models import MinimalSource
+from .chunking import read_file
+from .models import MinimalSource, RagError
 
 MODEL_NAME = "Qwen/Qwen3-0.6B"
 CONTEXT_TOKEN_BUDGET = 3000
@@ -25,13 +24,11 @@ SYSTEM_PROMPT = (
 )
 
 
-def load_qwen(model_name: str, dtype: torch.dtype,
-              local_files_only: bool) -> tuple[Any, Any]:
-    """Load the Qwen tokenizer and model.
+def load_qwen(model_name: str, local_files_only: bool) -> tuple[Any, Any]:
+    """Load the Qwen tokenizer and model in bfloat16.
 
     Args:
         model_name: Hugging Face model name.
-        dtype: Weight precision.
         local_files_only: Use only the local cache.
 
     Returns:
@@ -44,7 +41,7 @@ def load_qwen(model_name: str, dtype: torch.dtype,
         model_name, local_files_only=local_files_only
     )
     model = AutoModelForCausalLM.from_pretrained(
-        model_name, dtype=dtype, local_files_only=local_files_only
+        model_name, dtype=torch.bfloat16, local_files_only=local_files_only
     )
     return tokenizer, model
 
@@ -54,29 +51,31 @@ class Generator:
     def __init__(self, model_name: str = MODEL_NAME) -> None:
         """Load the model, on the GPU when available.
 
+        The local cache is tried first, so cached runs make no network
+        request; the model is downloaded only if it is missing.
+
         Args:
             model_name: Hugging Face model name.
 
         Raises:
             RagError: If the model cannot be loaded.
         """
-        device = "cuda" if torch.cuda.is_available() else "cpu"
-        dtype = torch.bfloat16 if device == "cuda" else torch.float32
         try:
             try:
-                tokenizer, model = load_qwen(model_name, dtype, True)
+                tokenizer, model = load_qwen(model_name, True)
             except OSError:
-                tokenizer, model = load_qwen(model_name, dtype, False)
+                tokenizer, model = load_qwen(model_name, False)
         except (OSError, ValueError) as error:
             raise RagError(
                 f"Cannot load language model {model_name}: {error}"
             ) from None
+        device = "cuda" if torch.cuda.is_available() else "cpu"
         self.tokenizer = tokenizer
         self.model = model.to(device)
         self.model.eval()
 
     def build_context(self, sources: list[MinimalSource]) -> str:
-        """Join source texts within the token budget.
+        """Join source texts, best first, within the token budget.
 
         Args:
             sources: Sources, best first.
@@ -87,7 +86,9 @@ class Generator:
         blocks: list[str] = []
         used_tokens = 0
         for source in sources:
-            text = read_span(source)
+            text = read_file(source.file_path)[
+                source.first_character_index:source.last_character_index
+            ]
             if not text.strip():
                 continue
             block = f"[Source: {source.file_path}]\n{text}"

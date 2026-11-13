@@ -1,10 +1,10 @@
 """Recall@k evaluation with the subject's IoU rule."""
 
-from .io_utils import RagError
 from .models import (
     AnsweredQuestion,
     MinimalSource,
     RagDataset,
+    RagError,
     StudentSearchResults,
 )
 
