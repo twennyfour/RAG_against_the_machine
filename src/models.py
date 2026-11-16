@@ -66,8 +66,7 @@ class Chunk(MinimalSource):
 
 
 class ChunkIndex(BaseModel):
-    """Saved chunks and the chunk size used."""
-    max_chunk_size: int
+    """Saved chunks; chunk i is BM25 document i."""
     chunks: list[Chunk]
 
 

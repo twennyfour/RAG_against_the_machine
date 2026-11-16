@@ -96,7 +96,7 @@ class Cli:
                 f"--max_chunk_size must be at most {MAX_SOURCE_LENGTH}: "
                 "longer sources are rejected by the grader"
             )
-        build_index(chunk_corpus(raw_dir, size), size, output_dir)
+        build_index(chunk_corpus(raw_dir, size), output_dir)
         print(f"Ingestion complete! Indices saved under {output_dir}/")
 
     def search(self, query: str, k: int = 10,
@@ -153,6 +153,9 @@ class Cli:
                index_dir: str = "data/processed") -> None:
         """Answer a query from its retrieved sources.
 
+        If search finds nothing, prints "No results." without loading the
+        model.
+
         Args:
             query: Question to answer.
             k: Number of sources to retrieve.
@@ -165,11 +168,13 @@ class Cli:
         text = check_query(query)
         count = check_positive_int("k", k)
         sources = Retriever(index_dir).search(text, count)
+        if not sources:
+            print("No results.")
+            return
 
         from .generator import Generator
         print(Generator().answer(text, sources))
-        if sources:
-            print("\nSources:")
+        print("\nSources:")
         print_sources(sources)
 
     def answer_dataset(

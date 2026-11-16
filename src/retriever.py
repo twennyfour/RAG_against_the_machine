@@ -69,15 +69,13 @@ def tokenize(texts: list[str]) -> list[list[str]]:
     return [list(document) for document in tokens]
 
 
-def build_index(chunks: list[Chunk], max_chunk_size: int,
-                output_dir: str) -> None:
+def build_index(chunks: list[Chunk], output_dir: str) -> None:
     """Build the BM25 index over chunks and save it in output_dir.
 
     Chunk i in chunks.json is BM25 document i.
 
     Args:
         chunks: Chunks to index.
-        max_chunk_size: Chunk size used, saved with the chunks.
         output_dir: Folder to write the index to.
 
     Raises:
@@ -93,8 +91,7 @@ def build_index(chunks: list[Chunk], max_chunk_size: int,
         raise RagError(
             f"Cannot write index to {output_dir}: {error.strerror}"
         ) from None
-    save_model(ChunkIndex(max_chunk_size=max_chunk_size, chunks=chunks),
-               Path(output_dir) / CHUNKS_FILE)
+    save_model(ChunkIndex(chunks=chunks), Path(output_dir) / CHUNKS_FILE)
 
 
 class Retriever:
