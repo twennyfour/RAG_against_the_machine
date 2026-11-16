@@ -113,12 +113,13 @@ class Retriever:
         self.chunks = load_model(chunks_path, ChunkIndex).chunks
         try:
             self.model = bm25s.BM25.load(index_dir, show_progress=False)
-        except (OSError, ValueError, KeyError):
+            num_docs = int(self.model.scores["num_docs"])
+        except (OSError, ValueError, KeyError, TypeError, EOFError):
             raise RagError(
                 f"Index in {index_dir} is unreadable or damaged. "
                 "Run the index command again."
             ) from None
-        if len(self.chunks) != int(self.model.scores["num_docs"]):
+        if len(self.chunks) != num_docs:
             raise RagError(
                 f"Index files in {index_dir} do not match. "
                 "Run the index command again."
