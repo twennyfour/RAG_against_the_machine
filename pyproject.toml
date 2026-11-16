@@ -7,8 +7,6 @@ dependencies = [
     "pydantic",
     "fire",
     "tqdm",
-    "numpy",
-    "scipy",
     "transformers",
     "torch",
     "bm25s",
