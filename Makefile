@@ -7,7 +7,7 @@ UV_ENV			:= UV_CACHE_DIR=$(UV_CACHE_DIR) UV_PROJECT_ENVIRONMENT=$(UV_PROJECT_ENV
 
 ARGS			?=
 
-.PHONY: install run debug lint clean fclean
+.PHONY: install run debug lint clean clean_data fclean
 
 install:
 	@mkdir -p $(UV_PROJECT_ENV)
@@ -29,10 +29,10 @@ clean:
 	find . -type d -name "__pycache__" -exec rm -rf {} +
 	find . -type d -name ".mypy_cache" -exec rm -rf {} +
 
-fclean: clean
-	rm -rf $(UV_PROJECT_ENV)
-	rm -rf $(CACHE_DIR)
-
 clean_data: clean
 	rm -rf data/processed/
 	rm -rf data/output/
+
+fclean: clean
+	rm -rf $(UV_PROJECT_ENV)
+	rm -rf $(CACHE_DIR)
