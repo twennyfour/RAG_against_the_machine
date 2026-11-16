@@ -8,8 +8,6 @@ from pydantic import BaseModel, Field, ValidationError
 class RagError(Exception):
     """Expected error shown to the user without a traceback."""
 
-    pass
-
 
 class MinimalSource(BaseModel):
     """Character span [first, last) of a corpus file."""

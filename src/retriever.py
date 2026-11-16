@@ -138,7 +138,9 @@ class Retriever:
         """Return the top-k sources for a query, best first.
 
         Only chunks with a score above 0 are returned, so a query with no
-        known word gets no result.
+        known word gets no result. The chunks are returned as they are: a
+        Chunk is a MinimalSource, and pydantic writes only the fields of the
+        declared type, so their text never reaches the output files.
 
         Args:
             query: Question to search for.
@@ -147,21 +149,11 @@ class Retriever:
         Returns:
             Sources, best first.
         """
-        tokens = tokenize([query])[0]
-        if not tokens:
-            return []
         ids, scores = self.model.retrieve(
-            [tokens], k=min(k, len(self.chunks)), show_progress=False
+            tokenize([query]), k=min(k, len(self.chunks)), show_progress=False
         )
-        sources: list[MinimalSource] = []
-        for chunk_id, score in zip(ids[0], scores[0]):
-            if score > 0:
-                chunk = self.chunks[int(chunk_id)]
-                sources.append(
-                    MinimalSource(
-                        file_path=chunk.file_path,
-                        first_character_index=chunk.first_character_index,
-                        last_character_index=chunk.last_character_index,
-                    )
-                )
-        return sources
+        return [
+            self.chunks[int(chunk_id)]
+            for chunk_id, score in zip(ids[0], scores[0])
+            if score > 0
+        ]

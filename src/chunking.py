@@ -115,7 +115,7 @@ def chunk_corpus(raw_dir: str, max_chunk_size: int) -> list[Chunk]:
     }
     chunks: list[Chunk] = []
     for path in tqdm(find_files(raw_dir), desc="Chunking files"):
-        file_path = Path(os.path.relpath(path)).as_posix()
+        file_path = os.path.relpath(path)
         chunks.extend(
             split_text(
                 read_file(path),
