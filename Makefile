@@ -32,5 +32,7 @@ clean:
 fclean: clean
 	rm -rf $(UV_PROJECT_ENV)
 	rm -rf $(CACHE_DIR)
+
+clean_data: clean
 	rm -rf data/processed/
 	rm -rf data/output/
