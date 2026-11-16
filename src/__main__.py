@@ -1,5 +1,3 @@
-"""Command-line interface: uv run python -m src <command>."""
-
 import sys
 from pathlib import Path
 
@@ -67,19 +65,22 @@ def print_sources(sources: list[MinimalSource]) -> None:
         sources: Sources to print, best first.
     """
     for rank, source in enumerate(sources, start=1):
-        print(f"{rank:2}. {source.file_path} "
-              f"[{source.first_character_index}:"
-              f"{source.last_character_index}]")
+        print(
+            f"{rank:2}. {source.file_path} "
+            f"[{source.first_character_index}:"
+            f"{source.last_character_index}]"
+        )
 
 
 class Cli:
-    """RAG commands: index, search, answer and evaluate.
+    """RAG commands: index, search, answer and evaluate."""
 
-    The answer commands import the generator inside the method: torch and
-    transformers are slow to import, and the other commands don't need them.
-    """
-    def index(self, max_chunk_size: int = 2000, raw_dir: str = "data/raw",
-              output_dir: str = "data/processed") -> None:
+    def index(
+        self,
+        max_chunk_size: int = 2000,
+        raw_dir: str = "data/raw",
+        output_dir: str = "data/processed",
+    ) -> None:
         """Chunk the corpus and build the search index.
 
         Args:
@@ -90,6 +91,7 @@ class Cli:
         Raises:
             RagError: If an argument is invalid or indexing fails.
         """
+        raw_dir, output_dir = str(raw_dir), str(output_dir)
         size = check_positive_int("max_chunk_size", max_chunk_size)
         if size > MAX_SOURCE_LENGTH:
             raise RagError(
@@ -99,8 +101,9 @@ class Cli:
         build_index(chunk_corpus(raw_dir, size), output_dir)
         print(f"Ingestion complete! Indices saved under {output_dir}/")
 
-    def search(self, query: str, k: int = 10,
-               index_dir: str = "data/processed") -> None:
+    def search(
+        self, query: str, k: int = 10, index_dir: str = "data/processed"
+    ) -> None:
         """Print the top-k sources for a query.
 
         Args:
@@ -111,6 +114,7 @@ class Cli:
         Raises:
             RagError: If an argument is invalid or the index is missing.
         """
+        index_dir = str(index_dir)
         text = check_query(query)
         count = check_positive_int("k", k)
         sources = Retriever(index_dir).search(text, count)
@@ -118,9 +122,13 @@ class Cli:
             print("No results.")
         print_sources(sources)
 
-    def search_dataset(self, dataset_path: str, k: int = 10,
-                       save_directory: str = "data/output/search_results",
-                       index_dir: str = "data/processed") -> None:
+    def search_dataset(
+        self,
+        dataset_path: str,
+        k: int = 10,
+        save_directory: str = "data/output/search_results",
+        index_dir: str = "data/processed",
+    ) -> None:
         """Search every dataset question and save results.
 
         Args:
@@ -132,25 +140,29 @@ class Cli:
         Raises:
             RagError: If an argument, file or the index is invalid.
         """
+        dataset_path, save_directory = str(dataset_path), str(save_directory)
+        index_dir = str(index_dir)
         count = check_positive_int("k", k)
         dataset = load_model(dataset_path, RagDataset)
         retriever = Retriever(index_dir)
         search_results: list[MinimalSearchResults] = []
         for question in tqdm(dataset.rag_questions, desc="Searching"):
             sources = retriever.search(question.question, count)
-            search_results.append(MinimalSearchResults(
-                question_id=question.question_id,
-                question=question.question,
-                retrieved_sources=sources,
-            ))
-        results = StudentSearchResults(search_results=search_results,
-                                       k=count)
+            search_results.append(
+                MinimalSearchResults(
+                    question_id=question.question_id,
+                    question=question.question,
+                    retrieved_sources=sources,
+                )
+            )
+        results = StudentSearchResults(search_results=search_results, k=count)
         output_path = Path(save_directory) / Path(dataset_path).name
         save_model(results, output_path)
         print(f"Saved student_search_results to {output_path}")
 
-    def answer(self, query: str, k: int = 10,
-               index_dir: str = "data/processed") -> None:
+    def answer(
+        self, query: str, k: int = 10, index_dir: str = "data/processed"
+    ) -> None:
         """Answer a query from its retrieved sources.
 
         If search finds nothing, prints "No results." without loading the
@@ -165,6 +177,7 @@ class Cli:
             RagError: If an argument is invalid or a model or the index
                 is missing.
         """
+        index_dir = str(index_dir)
         text = check_query(query)
         count = check_positive_int("k", k)
         sources = Retriever(index_dir).search(text, count)
@@ -173,12 +186,14 @@ class Cli:
             return
 
         from .generator import Generator
+
         print(Generator().answer(text, sources))
         print("\nSources:")
         print_sources(sources)
 
     def answer_dataset(
-        self, student_search_results_path: str,
+        self,
+        student_search_results_path: str,
         save_directory: str = "data/output/search_results_and_answer",
     ) -> None:
         """Generate answers for a search results file.
@@ -190,29 +205,34 @@ class Cli:
         Raises:
             RagError: If the file is invalid or the output cannot be written.
         """
-        results = load_model(student_search_results_path,
-                             StudentSearchResults)
+        student_search_results_path = str(student_search_results_path)
+        save_directory = str(save_directory)
+        results = load_model(student_search_results_path, StudentSearchResults)
         total = len(results.search_results)
         print(f"Loaded {total} questions")
 
         from .generator import Generator
+
         generator = Generator()
         answers: list[MinimalAnswer] = []
         for result in tqdm(results.search_results, desc="Answering"):
-            answer = generator.answer(result.question,
-                                      result.retrieved_sources)
-            answers.append(MinimalAnswer(**result.model_dump(),
-                                         answer=answer))
+            answer = generator.answer(
+                result.question, result.retrieved_sources
+            )
+            answers.append(MinimalAnswer(**result.model_dump(), answer=answer))
         print(f"Processed {len(answers)} of {total} questions")
-        output = StudentSearchResultsAndAnswer(search_results=answers,
-                                               k=results.k)
-        output_path = (Path(save_directory)
-                       / Path(student_search_results_path).name)
+        output = StudentSearchResultsAndAnswer(
+            search_results=answers, k=results.k
+        )
+        output_path = (
+            Path(save_directory) / Path(student_search_results_path).name
+        )
         save_model(output, output_path)
         print(f"Saved student_search_results_and_answer to {output_path}")
 
-    def evaluate(self, student_search_results_path: str,
-                 dataset_path: str) -> None:
+    def evaluate(
+        self, student_search_results_path: str, dataset_path: str
+    ) -> None:
         """Print recall@k of search results against a dataset.
 
         Args:
@@ -222,8 +242,9 @@ class Cli:
         Raises:
             RagError: If a file is missing or invalid.
         """
-        results = load_model(student_search_results_path,
-                             StudentSearchResults)
+        student_search_results_path = str(student_search_results_path)
+        dataset_path = str(dataset_path)
+        results = load_model(student_search_results_path, StudentSearchResults)
         dataset = load_model(dataset_path, RagDataset)
         recalls = recall_at_k(results, dataset)
         print(f"Questions evaluated: {len(dataset.rag_questions)}")
@@ -239,7 +260,7 @@ def main() -> None:
     printed in one line too, so the user never sees a traceback.
     """
     try:
-        fire.Fire(Cli())
+        fire.Fire(Cli(), name="src")
     except RagError as error:
         print(f"Error: {error}", file=sys.stderr)
         sys.exit(1)
@@ -247,8 +268,10 @@ def main() -> None:
         print("Interrupted.", file=sys.stderr)
         sys.exit(130)
     except Exception as error:
-        print(f"Unexpected error: {type(error).__name__}: {error}",
-              file=sys.stderr)
+        print(
+            f"Unexpected error: {type(error).__name__}: {error}",
+            file=sys.stderr,
+        )
         sys.exit(1)
 
 

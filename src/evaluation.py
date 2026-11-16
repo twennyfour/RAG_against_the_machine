@@ -1,5 +1,3 @@
-"""Recall@k evaluation with the subject's IoU rule."""
-
 from .models import (
     AnsweredQuestion,
     MinimalSource,
@@ -37,8 +35,9 @@ def iou(first: MinimalSource, second: MinimalSource) -> float:
     return overlap / union
 
 
-def question_recall(truth: list[MinimalSource],
-                    retrieved: list[MinimalSource]) -> float:
+def question_recall(
+    truth: list[MinimalSource], retrieved: list[MinimalSource]
+) -> float:
     """Return the share of truth sources found.
 
     Args:
@@ -55,8 +54,9 @@ def question_recall(truth: list[MinimalSource],
     return found / len(truth)
 
 
-def recall_at_k(results: StudentSearchResults,
-                dataset: RagDataset) -> dict[int, float]:
+def recall_at_k(
+    results: StudentSearchResults, dataset: RagDataset
+) -> dict[int, float]:
     """Return the mean recall for each k in RECALL_KS.
 
     Args:

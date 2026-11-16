@@ -1,5 +1,3 @@
-"""Pydantic models, their JSON files, and the project error."""
-
 import uuid
 from pathlib import Path
 from typing import TypeVar
@@ -9,11 +7,13 @@ from pydantic import BaseModel, Field, ValidationError
 
 class RagError(Exception):
     """Expected error shown to the user without a traceback."""
+
     pass
 
 
 class MinimalSource(BaseModel):
     """Character span [first, last) of a corpus file."""
+
     file_path: str
     first_character_index: int
     last_character_index: int
@@ -21,23 +21,27 @@ class MinimalSource(BaseModel):
 
 class UnansweredQuestion(BaseModel):
     """Question without a reference answer."""
+
     question_id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     question: str
 
 
 class AnsweredQuestion(UnansweredQuestion):
     """Question with its reference answer and sources."""
+
     sources: list[MinimalSource]
     answer: str
 
 
 class RagDataset(BaseModel):
     """Dataset of questions."""
+
     rag_questions: list[AnsweredQuestion | UnansweredQuestion]
 
 
 class MinimalSearchResults(BaseModel):
     """Retrieved sources for one question."""
+
     question_id: str
     question: str
     retrieved_sources: list[MinimalSource]
@@ -45,28 +49,33 @@ class MinimalSearchResults(BaseModel):
 
 class MinimalAnswer(MinimalSearchResults):
     """Retrieved sources and answer for one question."""
+
     answer: str
 
 
 class StudentSearchResults(BaseModel):
     """Output of search_dataset."""
+
     search_results: list[MinimalSearchResults]
     k: int
 
 
 class StudentSearchResultsAndAnswer(BaseModel):
     """Output of answer_dataset."""
+
     search_results: list[MinimalAnswer]
     k: int
 
 
 class Chunk(MinimalSource):
     """Indexed piece of a corpus file."""
+
     text: str
 
 
 class ChunkIndex(BaseModel):
     """Saved chunks; chunk i is BM25 document i."""
+
     chunks: list[Chunk]
 
 

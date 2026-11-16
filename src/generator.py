@@ -1,5 +1,3 @@
-"""Answer generation with Qwen3."""
-
 from typing import Any
 
 import torch
@@ -48,6 +46,7 @@ def load_qwen(model_name: str, local_files_only: bool) -> tuple[Any, Any]:
 
 class Generator:
     """Qwen model that answers from retrieved sources."""
+
     def __init__(self, model_name: str = MODEL_NAME) -> None:
         """Load the model, on the GPU when available.
 
@@ -114,11 +113,15 @@ class Generator:
             return NO_CONTEXT_ANSWER
         messages = [
             {"role": "system", "content": SYSTEM_PROMPT},
-            {"role": "user",
-             "content": f"Sources:\n{context}\n\nQuestion: {question}"},
+            {
+                "role": "user",
+                "content": f"Sources:\n{context}\n\nQuestion: {question}",
+            },
         ]
         prompt = self.tokenizer.apply_chat_template(
-            messages, tokenize=False, add_generation_prompt=True,
+            messages,
+            tokenize=False,
+            add_generation_prompt=True,
             enable_thinking=False,
         )
         inputs = self.tokenizer(prompt, return_tensors="pt").to(

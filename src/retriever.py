@@ -1,5 +1,3 @@
-"""BM25 retrieval: tokenize text, build the index, search it."""
-
 import re
 from pathlib import Path
 
@@ -18,7 +16,16 @@ from .models import (
 
 CHUNKS_FILE = "chunks.json"
 QUESTION_WORDS = [
-    "can", "do", "does", "how", "what", "when", "where", "which", "who", "why",
+    "can",
+    "do",
+    "does",
+    "how",
+    "what",
+    "when",
+    "where",
+    "which",
+    "who",
+    "why",
 ]
 STOPWORDS = list(STOPWORDS_EN) + QUESTION_WORDS
 STEMMER = Stemmer.Stemmer("english")
@@ -41,6 +48,7 @@ def add_identifier_parts(text: str) -> str:
     Returns:
         The text with identifier parts added.
     """
+
     def expand(match: re.Match[str]) -> str:
         word = match.group(0)
         return word + " " + " ".join(IDENTIFIER_PART.findall(word))
@@ -96,6 +104,7 @@ def build_index(chunks: list[Chunk], output_dir: str) -> None:
 
 class Retriever:
     """Search engine over a saved index."""
+
     def __init__(self, index_dir: str) -> None:
         """Load the index and check its two parts match.
 
@@ -148,9 +157,11 @@ class Retriever:
         for chunk_id, score in zip(ids[0], scores[0]):
             if score > 0:
                 chunk = self.chunks[int(chunk_id)]
-                sources.append(MinimalSource(
-                    file_path=chunk.file_path,
-                    first_character_index=chunk.first_character_index,
-                    last_character_index=chunk.last_character_index,
-                ))
+                sources.append(
+                    MinimalSource(
+                        file_path=chunk.file_path,
+                        first_character_index=chunk.first_character_index,
+                        last_character_index=chunk.last_character_index,
+                    )
+                )
         return sources

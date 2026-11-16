@@ -1,5 +1,3 @@
-"""Find the corpus files and split them into chunks."""
-
 import os
 from pathlib import Path
 
@@ -31,7 +29,8 @@ def find_files(raw_dir: str) -> list[Path]:
     if not root.is_dir():
         raise RagError(f"Corpus directory not found: {raw_dir}")
     return sorted(
-        path for path in root.rglob("*")
+        path
+        for path in root.rglob("*")
         if path.is_file() and path.suffix in LANGUAGES
     )
 
@@ -48,16 +47,20 @@ def read_file(path: str | Path) -> str:
         The file text.
     """
     try:
-        with open(path, encoding="utf-8", errors="replace",
-                  newline="") as file:
+        with open(
+            path, encoding="utf-8", errors="replace", newline=""
+        ) as file:
             return file.read()
     except OSError:
         return ""
 
 
-def split_text(text: str, file_path: str,
-               splitter: RecursiveCharacterTextSplitter,
-               max_chunk_size: int) -> list[Chunk]:
+def split_text(
+    text: str,
+    file_path: str,
+    splitter: RecursiveCharacterTextSplitter,
+    max_chunk_size: int,
+) -> list[Chunk]:
     """Split one file's text into chunks of at most max_chunk_size chars.
 
     Args:
@@ -77,12 +80,14 @@ def split_text(text: str, file_path: str,
             continue
         for piece_start in range(start, end, max_chunk_size):
             piece_end = min(piece_start + max_chunk_size, end)
-            chunks.append(Chunk(
-                file_path=file_path,
-                first_character_index=piece_start,
-                last_character_index=piece_end,
-                text=text[piece_start:piece_end],
-            ))
+            chunks.append(
+                Chunk(
+                    file_path=file_path,
+                    first_character_index=piece_start,
+                    last_character_index=piece_end,
+                    text=text[piece_start:piece_end],
+                )
+            )
     return chunks
 
 
@@ -111,8 +116,14 @@ def chunk_corpus(raw_dir: str, max_chunk_size: int) -> list[Chunk]:
     chunks: list[Chunk] = []
     for path in tqdm(find_files(raw_dir), desc="Chunking files"):
         file_path = Path(os.path.relpath(path)).as_posix()
-        chunks.extend(split_text(read_file(path), file_path,
-                                 splitters[path.suffix], max_chunk_size))
+        chunks.extend(
+            split_text(
+                read_file(path),
+                file_path,
+                splitters[path.suffix],
+                max_chunk_size,
+            )
+        )
     if not chunks:
         raise RagError(f"No .py, .md or .txt content found in {raw_dir}")
     return chunks
