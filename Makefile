@@ -10,20 +10,18 @@ ARGS			?=
 .PHONY: install run debug lint clean clean_data fclean
 
 install:
-	@mkdir -p $(UV_PROJECT_ENV)
-	@mkdir -p $(UV_CACHE_DIR)
-	@mkdir -p $(HF_CACHE_DIR)
 	$(UV_ENV) $(UV) sync
+	$(UV_ENV) $(UV) run hf download Qwen/Qwen3-0.6B
 
-run: install
-	$(UV_ENV) $(UV) -q run python -B -m src $(ARGS)
+run:
+	$(UV_ENV) $(UV) run python -B -m src $(ARGS)
 
-debug: install
-	$(UV_ENV) $(UV) -q run python -B -m pdb -m src $(ARGS)
+debug:
+	$(UV_ENV) $(UV) run python -B -m pdb -m src $(ARGS)
 
-lint: install clean
-	$(UV_ENV) $(UV) -q run flake8 src
-	$(UV_ENV) $(UV) -q run mypy src --warn-return-any --warn-unused-ignores --ignore-missing-imports --disallow-untyped-defs --check-untyped-defs
+lint: clean
+	$(UV_ENV) $(UV) run flake8 src
+	$(UV_ENV) $(UV) run mypy src --warn-return-any --warn-unused-ignores --ignore-missing-imports --disallow-untyped-defs --check-untyped-defs
 
 clean:
 	find . -type d -name "__pycache__" -exec rm -rf {} +
